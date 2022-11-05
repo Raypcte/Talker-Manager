@@ -8,4 +8,4 @@ async function converter(caminho) {
 
 module.exports = {
   converter,
-}
+};
