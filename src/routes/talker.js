@@ -32,6 +32,4 @@ talker.get('/talker/:id', async (req, res) => {
   res.status(200).json(response);
 });
 
-module.exports = {
-  talker,
-};
+module.exports = talker;
