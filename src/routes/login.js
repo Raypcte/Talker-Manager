@@ -1,12 +1,12 @@
 const express = require('express');
+const crypto = require('crypto');
 
 const login = express.Router();
-
-const crypto = require('crypto');
 
 function generateToken() {
   return crypto.randomBytes(8).toString('hex');
 }
+
 const emailValido = (email) => {
   const regex = /\w+@\w+\.\w+/;
   return regex.test(email);
@@ -28,7 +28,7 @@ login.post('/login', (request, response) => {
     return response.status(400).json({ message: 'O "password" deve ter pelo menos 6 caracteres' });
   }
   
-  return response.status(200).send(`{ "token": "${generateToken()}" }`);
+  return response.status(200).json({ token: generateToken() });
 });
 
 module.exports = login;

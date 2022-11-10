@@ -1,15 +1,22 @@
 const fs = require('fs').promises;
 
-async function converter(caminho) {
-  const arq = await fs.readFile(caminho);
+const path = `${__dirname}/../talker.json`;
+
+async function converter() {
+  const arq = await fs.readFile(path);
   const dados = JSON.parse(arq);
   return dados;
 }  
-  async function escrever(caminho, novoDado) {
-  const dados = await converter(caminho) || [];
-  const novosDados = JSON.stringify([...dados, { id: dados.length + 1, ...novoDado }]);
 
-  await fs.writeFile(caminho, novosDados);
+async function escrever(novoDado) {
+  const dados = await converter() || [];
+
+  const novosDados = JSON.stringify([
+    ...dados,
+    { id: dados.length + 1, ...novoDado },
+  ]);
+
+  await fs.writeFile(path, novosDados);
   return { id: dados.length + 1, ...novoDado };
 }
 
