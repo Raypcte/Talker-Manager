@@ -34,9 +34,8 @@ talker.get('/talker/:id', async (req, res) => {
 });
 
 const validaData = (data) => {
-  const regex = /\d\d\/\d\d\/\d\d\d\d/;
-  console.log(data);
-  return regex.test(data);
+  const dateRegex = new RegExp(/\d{2}\/\d{2}\/\d{4}/);
+  return !dateRegex.test(data);
 };
 
 const validacaoTalker = (condicao, res, status, message) => {
@@ -47,17 +46,30 @@ const validacaoTalker = (condicao, res, status, message) => {
   }
 };
 
-talker.post('/talker', (req, res) => {
-  const pessoaNova = req.body;
-  const token = req.headers;
-  console.log(token.authorization);
+const validacaoMidAut = (req, res, next) => {
+  const { headers: { authorization } } = req;
+  
+  validacaoTalker(!authorization, res, 401, 'Token não encontrado');
+  validacaoTalker(authorization.length !== 16, res, 401, 'Token inválido');
+  next();
+};
 
-  validacaoTalker(!token.authorization, res, 401, 'Token não encontrado');
-  validacaoTalker(token.authorization.length !== 16, res, 401, 'Token inválido');
-  validacaoTalker(!pessoaNova.name, res, 400, 
-    'O campo "name" é obrigatório');
-  validacaoTalker(pessoaNova.name.length < 3, res, 400, 
-    'O "name" deve ter pelo menos 3 caracteres');
+const validacaoMidName = (req, res, next) => {
+  const { body: { pessoaNova }, headers: { authorization } } = req;
+  if (authorization) {
+    validacaoTalker(!pessoaNova.name, res, 400, 
+      'O campo "name" é obrigatório');
+    validacaoTalker(pessoaNova.name.length < 3, res, 400, 
+      'O "name" deve ter pelo menos 3 caracteres');
+  }
+  
+  next();
+};
+
+talker.post('/talker', validacaoMidAut, validacaoMidName,
+ (req, res) => {
+  const pessoaNova = req.body;
+  
   validacaoTalker(!pessoaNova.age, res, 400, 
     'O campo "age" é obrigatório');
   validacaoTalker(pessoaNova.age < 18, res, 400, 
@@ -66,7 +78,7 @@ talker.post('/talker', (req, res) => {
     'O campo "talk" é obrigatório');
   validacaoTalker(!pessoaNova.talk.watchedAt, res, 400, 
     'O campo "watchedAt" é obrigatório');
-  validacaoTalker(!validaData(pessoaNova.talk.watchedAt), res, 400, 
+  validacaoTalker(validaData(pessoaNova.talk.watchedAt), res, 400, 
     'O campo "watchedAt" deve ter o formato "dd/mm/aaaa"');
   validacaoTalker(!pessoaNova.talk.rate, res, 400, 
     'O campo "rate" é obrigatório');
@@ -74,6 +86,6 @@ talker.post('/talker', (req, res) => {
     res, 400, 'O campo "rate" deve ser um inteiro de 1 à 5');
 
   const path = `${__dirname}/../talker.json`;
-  escrever(path, pessoaNova);
+  // escrever(path, pessoaNova);
 });
 module.exports = talker;
