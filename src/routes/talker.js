@@ -1,4 +1,3 @@
-/* eslint-disable max-lines-per-function */
 const express = require('express');
 const { converter, escrever } = require('../middlewares/ferramentas');
 
@@ -38,54 +37,101 @@ const validaData = (data) => {
   return !dateRegex.test(data);
 };
 
-const validacaoTalker = (condicao, res, status, message) => {
-  if (condicao) {
-    res.status(status).json({
-      message,
+const midAut = (req, res, next) => {
+  const { headers: { authorization } } = req;
+  if (!authorization) {
+    res.status(401).json({
+      message: 'Token não encontrado',
     });
   }
-};
-
-const validacaoMidAut = (req, res, next) => {
-  const { headers: { authorization } } = req;
-  
-  validacaoTalker(!authorization, res, 401, 'Token não encontrado');
-  validacaoTalker(authorization.length !== 16, res, 401, 'Token inválido');
-  next();
-};
-
-const validacaoMidName = (req, res, next) => {
-  const { body: { pessoaNova }, headers: { authorization } } = req;
-  if (authorization) {
-    validacaoTalker(!pessoaNova.name, res, 400, 
-      'O campo "name" é obrigatório');
-    validacaoTalker(pessoaNova.name.length < 3, res, 400, 
-      'O "name" deve ter pelo menos 3 caracteres');
+  if (authorization.length !== 16) {
+    res.status(401).json({
+      message: 'Token inválido',
+    });
   }
-  
   next();
 };
 
-talker.post('/talker', validacaoMidAut, validacaoMidName,
- (req, res) => {
-  const pessoaNova = req.body;
-  
-  validacaoTalker(!pessoaNova.age, res, 400, 
-    'O campo "age" é obrigatório');
-  validacaoTalker(pessoaNova.age < 18, res, 400, 
-    'A pessoa palestrante deve ser maior de idade');
-  validacaoTalker(!pessoaNova.talk, res, 400, 
-    'O campo "talk" é obrigatório');
-  validacaoTalker(!pessoaNova.talk.watchedAt, res, 400, 
-    'O campo "watchedAt" é obrigatório');
-  validacaoTalker(validaData(pessoaNova.talk.watchedAt), res, 400, 
-    'O campo "watchedAt" deve ter o formato "dd/mm/aaaa"');
-  validacaoTalker(!pessoaNova.talk.rate, res, 400, 
-    'O campo "rate" é obrigatório');
-  validacaoTalker(pessoaNova.talk.rate < 1 || pessoaNova.talk.rate > 5,
-    res, 400, 'O campo "rate" deve ser um inteiro de 1 à 5');
+const midName = (req, res, next) => {
+  const { body: pessoaNova, headers: { authorization } } = req;
+  if (authorization) {
+    if (!pessoaNova.name) {
+      res.status(400).json({
+        message: 'O campo "name" é obrigatório',
+      });
+    }
+    if (pessoaNova.name.length < 3) {
+      res.status(400).json({
+        message: 'O "name" deve ter pelo menos 3 caracteres',
+      });
+    }
+  }
+  next();
+};
 
+const midAge = (req, res, next) => {
+  const { body: pessoaNova, headers: { authorization } } = req;
+  if (authorization) {
+    if (!pessoaNova.age) {
+      res.status(400).json({
+        message: 'O campo "age" é obrigatório',
+      });
+    }
+    if (pessoaNova.age < 18) {
+      res.status(400).json({
+        message: 'A pessoa palestrante deve ser maior de idade',
+      });
+    }
+  }
+  next();
+};
+
+const midTalk = (req, res, next) => {
+  const { body: pessoaNova, headers: { authorization } } = req;
+  if (authorization) {
+    if (!pessoaNova.talk) {
+      res.status(400).json({
+        message: 'O campo "talk" é obrigatório',
+      });
+    }
+    if (!pessoaNova.talk.watchedAt) {
+      res.status(400).json({
+        message: 'O campo "watchedAt" é obrigatório',
+      });
+    }
+    if (validaData(pessoaNova.talk.watchedAt)) {
+      res.status(400).json({
+        message: 'O campo "watchedAt" deve ter o formato "dd/mm/aaaa"',
+      });
+    }
+    if (!pessoaNova.talk.rate) {
+      res.status(400).json({
+        message: 'O campo "rate" é obrigatório',
+      });
+    }
+    if (pessoaNova.talk.rate < 1 || pessoaNova.talk.rate > 5) {
+      res.status(400).json({
+        message: 'O campo "rate" deve ser um inteiro de 1 à 5',
+      });
+    }
+  }
+  next();
+};
+
+talker.post(
+  '/talker',
+  midAut,
+  midName,
+  midAge,
+  midTalk,
+ async (req, res) => {
+  const pessoaNova = req.body;
+  console.log(pessoaNova);
   const path = `${__dirname}/../talker.json`;
-  // escrever(path, pessoaNova);
-});
+  const pessoa = await escrever(path, pessoaNova);
+
+  // res.status(201).json(pessoa);
+},
+);
+
 module.exports = talker;

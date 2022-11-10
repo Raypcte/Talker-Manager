@@ -7,8 +7,10 @@ async function converter(caminho) {
 }  
   async function escrever(caminho, novoDado) {
   const dados = await converter(caminho) || [];
-  const novosDados = JSON.stringify([...dados, novoDado]);
+  const novosDados = JSON.stringify([...dados, { id: dados.length + 1, ...novoDado }]);
+
   await fs.writeFile(caminho, novosDados);
+  return { id: dados.length + 1, ...novoDado };
 }
 
 module.exports = {
