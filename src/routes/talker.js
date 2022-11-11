@@ -1,4 +1,5 @@
 const express = require('express');
+const fs = require('fs').promises;
 const { converter, escrever } = require('../middlewares/ferramentas');
 
 const talker = express.Router();
@@ -119,11 +120,17 @@ const midTalk = (req, res, next) => {
 
 const midRate = (req, res, next) => {
   const { body: pessoaNova } = req;
-    if (!pessoaNova.talk.rate) {
+    if (!pessoaNova.talk.rate && typeof pessoaNova.talk.rate !== 'number') {
+      console.log(pessoaNova.talk.rate);
       return res.status(400).json({
         message: 'O campo "rate" é obrigatório',
       });
     }
+  next();
+};
+
+const midRateNumber = (req, res, next) => {
+  const { body: pessoaNova } = req;
     if (
       pessoaNova.talk.rate < 1
       || pessoaNova.talk.rate > 5
@@ -143,6 +150,7 @@ talker.post(
   midAge,
   midTalk,
   midRate,
+  midRateNumber,
   async (req, res) => {
     const pessoaNova = req.body;
 
@@ -150,5 +158,28 @@ talker.post(
     return res.status(201).json({ ...pessoa });
   },
 );
+
+talker.put('/talker/:id', 
+midAut,
+midName,
+midAge,
+midTalk,
+midRate,
+midRateNumber,
+async (req, res) => {
+  const { id } = req.params;
+  const user = await converter();
+  // console.log(user);
+
+  const userMap = user
+    .map((el) => (
+      el.id === Number(id) ? { id: el.id, ...req.body } : el));
+
+  const path = `${__dirname}/../talker.json`;
+  const response = userMap[id - 1];
+  await fs.writeFile(path, JSON.stringify(userMap));
+
+  res.status(200).json(response);
+});
 
 module.exports = talker;
