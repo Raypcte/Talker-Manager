@@ -1,40 +1,11 @@
 const express = require('express');
 const fs = require('fs').promises;
 const { converter, escrever } = require('../middlewares/ferramentas');
-const path = `${__dirname}/../talker.json`;
 
+const path = `${__dirname}/../talker.json`;
 const talker = express.Router();
 
-// ROTA LEITURA DE TODOS PALESTRANTES
-talker.get('/talker', async (_req, res) => {
-  const palestrantes = await converter();
-
-  if (!palestrantes) {
-    return res.status(200).json([]);
-  }
-
-  return res.status(200).json(palestrantes);
-});
-
-// ROTA LEITURA DE 01 PALESTRANTE
-talker.get('/talker/:id', async (req, res) => {
-  const { id } = req.params;
-
-  const palestrantes = await converter();
-
-  const response = palestrantes.find(
-    (palestrante) => Number(palestrante.id) === Number(id),
-  );
-
-  if (!response) {
-    return res
-      .status(404)
-      .json({ message: 'Pessoa palestrante não encontrada' });
-  }
-
-  return res.status(200).json(response);
-});
-
+// MIDDLEWARES DE VALIDACAO
 const validaData = (data) => {
   const dateRegex = new RegExp(/\d{2}\/\d{2}\/\d{4}/);
   console.log(data, dateRegex.test(data), 'dataaaaa');
@@ -144,6 +115,53 @@ const midRateNumber = (req, res, next) => {
   next();
 };
 
+
+// ROTA DE LEITURA PARA TODOS OS PALESTRANTES
+talker.get('/talker', async (_req, res) => {
+  const palestrantes = await converter();
+
+  if (!palestrantes) {
+    return res.status(200).json([]);
+  }
+
+  return res.status(200).json(palestrantes);
+});
+
+// ROTA DE LEITURA PELO NOME DO PALESTRANTE
+talker.get('/talker/search', midAut, async (req, res) => {
+  const { q } = req.query;
+  console.log(q, 'busca')
+
+  const users = await converter();
+  const searchUsers = users.filter((el) => el.name.includes(q));
+
+  if (!q) {
+    res.status(200).json(users);
+  } else {
+    res.status(200).json(searchUsers);
+  }
+});
+
+// ROTA LEITURA PELO ID DO PALESTRANTE
+talker.get('/talker/:id', async (req, res) => {
+  const { id } = req.params;
+
+  const palestrantes = await converter();
+
+  const response = palestrantes.find(
+    (palestrante) => Number(palestrante.id) === Number(id),
+  );
+
+  if (!response) {
+    return res
+      .status(404)
+      .json({ message: 'Pessoa palestrante não encontrada' });
+  }
+
+  return res.status(200).json(response);
+});
+
+// ROTA DE ESCRITA PARA ADICIONAR UM PALESTRANTE
 talker.post(
   '/talker',
   midAut,
@@ -160,6 +178,7 @@ talker.post(
   },
 );
 
+// ROTA DE ATUALIZACAO DE UM PALESTRANTE
 talker.put('/talker/:id', 
 midAut,
 midName,
@@ -182,6 +201,7 @@ async (req, res) => {
   res.status(200).json(response);
 });
 
+// ROTA PARA DELETAR UM PALESTRANTE
 talker.delete('/talker/:id', midAut, async (req, res) => {
   const { id } = req.params;
   const users = await converter();
