@@ -115,7 +115,6 @@ const midRateNumber = (req, res, next) => {
   next();
 };
 
-
 // ROTA DE LEITURA PARA TODOS OS PALESTRANTES
 talker.get('/talker', async (_req, res) => {
   const palestrantes = await converter();
@@ -130,7 +129,7 @@ talker.get('/talker', async (_req, res) => {
 // ROTA DE LEITURA PELO NOME DO PALESTRANTE
 talker.get('/talker/search', midAut, async (req, res) => {
   const { q } = req.query;
-  console.log(q, 'busca')
+  console.log(q, 'busca');
 
   const users = await converter();
   const searchUsers = users.filter((el) => el.name.includes(q));
