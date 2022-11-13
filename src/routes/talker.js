@@ -1,6 +1,7 @@
 const express = require('express');
 const fs = require('fs').promises;
 const { converter, escrever } = require('../middlewares/ferramentas');
+const path = `${__dirname}/../talker.json`;
 
 const talker = express.Router();
 
@@ -175,11 +176,20 @@ async (req, res) => {
     .map((el) => (
       el.id === Number(id) ? { id: el.id, ...req.body } : el));
 
-  const path = `${__dirname}/../talker.json`;
   const response = userMap[id - 1];
   await fs.writeFile(path, JSON.stringify(userMap));
 
   res.status(200).json(response);
+});
+
+talker.delete('/talker/:id', midAut, async (req, res) => {
+  const { id } = req.params;
+  const users = await converter();
+
+  const userFind = users.filter((el) => el.id !== Number(id));
+  await fs.writeFile(path, JSON.stringify(userFind));
+
+  return res.sendStatus(204);
 });
 
 module.exports = talker;
